@@ -1,5 +1,6 @@
 package com.greenfarm3.ui;
 
+import com.greenfarm3.game.Sprite;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
@@ -97,6 +98,64 @@ public class Renderer {
         gc.setFont(font);
         gc.setFill(color);
         gc.fillText(text, x * scale, y * scale);
+    }
+    
+    /**
+     * Draw a sprite at its current position
+     * @param sprite Sprite to draw
+     */
+    public void drawSprite(Sprite sprite) {
+        if (sprite != null && sprite.isValid()) {
+            drawImage(sprite.getImage(), sprite.getX(), sprite.getY());
+        }
+    }
+    
+    /**
+     * Draw a sprite at a specific position (overrides sprite's position)
+     * @param sprite Sprite to draw
+     * @param x X coordinate (in game coordinates)
+     * @param y Y coordinate (in game coordinates)
+     */
+    public void drawSprite(Sprite sprite, int x, int y) {
+        if (sprite != null && sprite.isValid()) {
+            drawImage(sprite.getImage(), x, y);
+        }
+    }
+    
+    /**
+     * Draw a sprite at a specific position with custom size
+     * @param sprite Sprite to draw
+     * @param x X coordinate (in game coordinates)
+     * @param y Y coordinate (in game coordinates)
+     * @param width Width (in game coordinates)
+     * @param height Height (in game coordinates)
+     */
+    public void drawSprite(Sprite sprite, int x, int y, int width, int height) {
+        if (sprite != null && sprite.isValid()) {
+            drawImage(sprite.getImage(), x, y, width, height);
+        }
+    }
+    
+    /**
+     * Draw a portion of a sprite (for sprite sheets)
+     * @param sprite Sprite to draw from
+     * @param srcX Source X in sprite
+     * @param srcY Source Y in sprite
+     * @param srcWidth Source width
+     * @param srcHeight Source height
+     * @param destX Destination X (in game coordinates)
+     * @param destY Destination Y (in game coordinates)
+     * @param destWidth Destination width (in game coordinates)
+     * @param destHeight Destination height (in game coordinates)
+     */
+    public void drawSpriteRegion(Sprite sprite, int srcX, int srcY, int srcWidth, int srcHeight,
+                                  int destX, int destY, int destWidth, int destHeight) {
+        if (sprite != null && sprite.isValid()) {
+            Image img = sprite.getImage();
+            gc.drawImage(img, 
+                srcX, srcY, srcWidth, srcHeight,
+                destX * scale, destY * scale, destWidth * scale, destHeight * scale);
+        }
     }
     
     /**
