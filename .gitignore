@@ -1,0 +1,39 @@
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+*.swp
+*.swo
+*~
+
+# Build
+build/
+dist/
+out/
+bin/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Decompiled source
+source/decompiled/
+source/extracted/
+
+# Save files (optional - uncomment if you don't want to track saves)
+saves/
