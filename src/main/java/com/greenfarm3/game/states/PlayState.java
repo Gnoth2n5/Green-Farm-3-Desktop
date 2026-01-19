@@ -6,12 +6,15 @@ import com.greenfarm3.game.GameState;
 import com.greenfarm3.game.Sprite;
 import com.greenfarm3.game.TileMap;
 import com.greenfarm3.game.TileRenderer;
+import com.greenfarm3.game.states.PauseState;
+import com.greenfarm3.game.ui.HUDOverlay;
 import com.greenfarm3.ui.Renderer;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import java.util.function.Consumer;
 
 /**
  * Main gameplay state.
@@ -37,6 +40,15 @@ public class PlayState extends GameState {
     private Camera camera;
     private TileRenderer tileRenderer;
     
+    // Pause system
+    private boolean isPaused = false;
+    private PauseState pauseState;
+    private Consumer<String> pauseActionCallback;
+    
+    // HUD overlay
+    private HUDOverlay hudOverlay;
+    private Consumer<String> hudActionCallback;
+    
     // Viewport size (matches GameWindow base dimensions)
     private static final int VIEW_WIDTH = 240;
     private static final int VIEW_HEIGHT = 320;
@@ -44,6 +56,30 @@ public class PlayState extends GameState {
     public PlayState(Renderer renderer) {
         this.renderer = renderer;
         this.assetManager = AssetManager.getInstance();
+        
+        // Initialize pause state
+        this.pauseState = new PauseState(renderer);
+        this.pauseActionCallback = this::handlePauseAction;
+        this.pauseState.setActionCallback(pauseActionCallback);
+        
+        // Initialize HUD overlay
+        this.hudOverlay = new HUDOverlay(renderer);
+        this.hudActionCallback = this::handleHUDAction;
+        this.hudOverlay.setButtonCallback(hudActionCallback);
+    }
+    
+    public void setPauseActionCallback(Consumer<String> callback) {
+        this.pauseActionCallback = callback;
+        if (pauseState != null) {
+            pauseState.setActionCallback(callback);
+        }
+    }
+    
+    public void setHUDActionCallback(Consumer<String> callback) {
+        this.hudActionCallback = callback;
+        if (hudOverlay != null) {
+            hudOverlay.setButtonCallback(callback);
+        }
     }
     
     @Override
@@ -132,6 +168,11 @@ public class PlayState extends GameState {
     
     @Override
     public void update(double deltaTime) {
+        // Don't update game when paused
+        if (isPaused) {
+            return;
+        }
+        
         // Update camera to follow player
         if (camera != null) {
             camera.follow(playerX, playerY);
@@ -201,6 +242,16 @@ public class PlayState extends GameState {
         if (tileRenderer != null) {
             renderer.drawText("Tiles loaded: " + tileRenderer.getLoadedSpriteCount(), 10, 80, uiFont, Color.WHITE);
         }
+        
+        // Render HUD overlay (always visible when not paused)
+        if (!isPaused && hudOverlay != null) {
+            hudOverlay.render();
+        }
+        
+        // Render pause menu overlay if paused
+        if (isPaused && pauseState != null) {
+            pauseState.render(gc);
+        }
     }
     
     @Override
@@ -226,8 +277,18 @@ public class PlayState extends GameState {
                 newX = playerX + playerSpeed;
                 break;
             case ESCAPE:
-                // TODO: Pause menu
-                break;
+                // Toggle pause menu
+                togglePause();
+                return; // Don't process movement when toggling pause
+        }
+        
+        // Don't process movement when paused
+        if (isPaused) {
+            // Let pause state handle input
+            if (pauseState != null) {
+                pauseState.handleKeyPress(keyCode);
+            }
+            return;
         }
         
         // Clamp player to map boundaries
@@ -260,7 +321,63 @@ public class PlayState extends GameState {
     
     @Override
     public void handleClick(int x, int y) {
+        // If paused, let pause state handle clicks
+        if (isPaused && pauseState != null) {
+            pauseState.handleClick(x, y);
+            return;
+        }
+        
+        // Check if HUD button was clicked
+        if (hudOverlay != null && hudOverlay.handleClick(x, y)) {
+            return; // HUD handled the click
+        }
+        
         // Handle click interactions
         // TODO: Implement farming interactions
+    }
+    
+    /**
+     * Toggle pause state
+     */
+    public void togglePause() {
+        isPaused = !isPaused;
+        if (isPaused && pauseState != null) {
+            pauseState.initialize();
+        }
+    }
+    
+    /**
+     * Set pause state
+     */
+    public void setPaused(boolean paused) {
+        this.isPaused = paused;
+        if (isPaused && pauseState != null) {
+            pauseState.initialize();
+        }
+    }
+    
+    /**
+     * Check if game is paused
+     */
+    public boolean isPaused() {
+        return isPaused;
+    }
+    
+    /**
+     * Handle pause menu actions
+     */
+    private void handlePauseAction(String action) {
+        if (pauseActionCallback != null) {
+            pauseActionCallback.accept(action);
+        }
+    }
+    
+    /**
+     * Handle HUD button actions
+     */
+    private void handleHUDAction(String action) {
+        if (hudActionCallback != null) {
+            hudActionCallback.accept(action);
+        }
     }
 }

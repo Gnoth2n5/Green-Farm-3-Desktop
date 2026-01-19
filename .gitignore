@@ -37,3 +37,7 @@ source/extracted/
 
 # Save files (optional - uncomment if you don't want to track saves)
 saves/
+
+# Log files
+log/
+*.log

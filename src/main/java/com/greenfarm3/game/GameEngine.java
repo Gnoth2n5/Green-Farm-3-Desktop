@@ -1,7 +1,10 @@
 package com.greenfarm3.game;
 
+import com.greenfarm3.game.states.InventoryState;
 import com.greenfarm3.game.states.MenuState;
 import com.greenfarm3.game.states.PlayState;
+import com.greenfarm3.game.states.SettingsState;
+import com.greenfarm3.game.states.ShopState;
 import com.greenfarm3.storage.SaveManager;
 import com.greenfarm3.ui.Renderer;
 import javafx.animation.AnimationTimer;
@@ -20,6 +23,7 @@ public class GameEngine {
     private final Renderer renderer;
     private AnimationTimer gameLoop;
     private GameState currentState;
+    private PlayState playState; // Reference to play state for UI transitions
     private SaveManager saveManager;
     
     private boolean running = false;
@@ -125,14 +129,26 @@ public class GameEngine {
         if (saveManager != null) {
             GameState loaded = saveManager.loadGame();
             if (loaded != null) {
+                // If loaded state is PlayState, setup callbacks
+                if (loaded instanceof PlayState) {
+                    this.playState = (PlayState) loaded;
+                    playState.setPauseActionCallback(this::handlePlayStateAction);
+                    playState.setHUDActionCallback(this::handlePlayStateAction);
+                }
                 setState(loaded);
             }
         }
     }
     
     public void newGame() {
-        PlayState playState = new PlayState(renderer);
-        setState(playState);
+        PlayState newPlayState = new PlayState(renderer);
+        this.playState = newPlayState;
+        
+        // Setup callbacks for pause menu and HUD
+        newPlayState.setPauseActionCallback(this::handlePlayStateAction);
+        newPlayState.setHUDActionCallback(this::handlePlayStateAction);
+        
+        setState(newPlayState);
     }
     
     private void handleStateChange(String action) {
@@ -144,10 +160,80 @@ public class GameEngine {
                 loadGame();
                 break;
             case "settings":
-                // TODO: Open settings dialog
+                // Open settings from menu (not implemented yet)
                 System.out.println("Settings");
                 break;
         }
+    }
+    
+    /**
+     * Handle actions from PlayState (pause menu and HUD buttons)
+     */
+    private void handlePlayStateAction(String action) {
+        if (playState == null) return;
+        
+        switch (action) {
+            case "inventory":
+                openInventory();
+                break;
+            case "shop":
+                openShop();
+                break;
+            case "settings":
+                openSettings();
+                break;
+            case "resume":
+                // Resume game (unpause)
+                playState.setPaused(false);
+                break;
+            case "quit_to_menu":
+                // Return to main menu
+                MenuState menuState = new MenuState(renderer);
+                menuState.setStateChangeCallback(this::handleStateChange);
+                setState(menuState);
+                playState = null; // Clear reference
+                break;
+            case "back":
+                // Return to gameplay from UI screen
+                if (playState != null) {
+                    setState(playState);
+                    playState.setPaused(false);
+                }
+                break;
+        }
+    }
+    
+    /**
+     * Open inventory screen
+     */
+    private void openInventory() {
+        if (playState == null) return;
+        
+        InventoryState inventoryState = new InventoryState(renderer);
+        inventoryState.setActionCallback(this::handlePlayStateAction);
+        setState(inventoryState);
+    }
+    
+    /**
+     * Open shop screen
+     */
+    private void openShop() {
+        if (playState == null) return;
+        
+        ShopState shopState = new ShopState(renderer);
+        shopState.setActionCallback(this::handlePlayStateAction);
+        setState(shopState);
+    }
+    
+    /**
+     * Open settings screen
+     */
+    private void openSettings() {
+        if (playState == null) return;
+        
+        SettingsState settingsState = new SettingsState(renderer);
+        settingsState.setActionCallback(this::handlePlayStateAction);
+        setState(settingsState);
     }
     
     public void setState(GameState newState) {
